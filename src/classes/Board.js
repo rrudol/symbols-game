@@ -17,7 +17,7 @@ module.exports = class Board {
   }
   restart() {
     this.symbols = shuffleArray( Array(30).fill().map((_, i) => i) ).slice(0, this.size);
-    console.log(this.symbols);
+    // console.log(this.symbols);
   }
   toBuffer() {
     const arr = (new Uint8Array(this.size)).map( (_, i) => this.symbols[i] );

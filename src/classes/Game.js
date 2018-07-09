@@ -11,11 +11,15 @@ module.exports = class Game {
     console.log(`game created`);
   }
   broadcast() {
+    const leader = Object.values( this.players ).map((player) => {
+      return { id: player.playerId, score: this.score[player.playerId] };
+    });
     Object.values( this.players ).forEach((player) => {
+      this.sendScore(player);
+      player.socket.emit('leaderboard', leader);
       player.socket.emit('table', this.board.toBuffer());
       this.players[player.socket.id].board = new Board(6);
       player.socket.emit('hand', this.players[player.socket.id].board.toBuffer());
-      this.sendScore(player);
     });
   }
   sendScore(player) {
@@ -27,19 +31,20 @@ module.exports = class Game {
     clearTimeout(this.timeout);
 
     this.board = new Board(7);
-    console.log(`refreshing board ${this.board.toBuffer()}`);
+    // console.log(`refreshing board ${this.board.toBuffer()}`);
 
     this.broadcast();
 
     this.timeout = setTimeout( this.refresh.bind(this), 10000 );
   }
   addPlayer(playerId, socket) {
-    this.score[playerId] = 0;
+    console.log('new player', playerId)
+    this.score[playerId] = this.score[playerId] || 0;
     this.players[socket.id] = {
       playerId,
-      hand: new Board(4),
       socket
     }
+
     socket.on('guess', message => {
       console.log(message, this.board.symbols);
       if(this.board.has(message)) {
