@@ -1,4 +1,5 @@
-window.onload = function(){
+// window.onload = function(){
+setTimeout(() => {
   require([
     "Game",
     "https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.1/pixi.min.js",
@@ -6,6 +7,7 @@ window.onload = function(){
   ], (Game, pixi, io) => {
     setTimeout(() => { new Game(pixi, io); }, 1000);
   });  
-};
+}, 1000);
+// };
 
 

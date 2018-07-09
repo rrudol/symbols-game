@@ -1,8 +1,8 @@
 function shuffle(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  // for (let i = a.length - 1; i > 0; i--) {
+  //   const j = Math.floor(Math.random() * (i + 1));
+  //   [a[i], a[j]] = [a[j], a[i]];
+  // }
   return a;
 }
 
@@ -19,10 +19,10 @@ const colors = shuffle([
   "#FFDC00", // YELLOW
 
   "#FF851B", // ORANGE
-  "#FF4136" // RED
+  "#FF4136", // RED
   // '#85144b', // MAROON
-  // '#F012BE', // FUCHSIA
-  // '#B10DC9', // PURPLE
+  // '#F012BE' // FUCHSIA
+  '#B10DC9', // PURPLE
   // '#111111', // BLACK
   // '#AAAAAA', // GRAY
   // '#DDDDDD', // SILVER
@@ -72,7 +72,6 @@ const addIcon = (char, fill, rx, ry, cb) => {
   });
 
   let { x, y } = normalizePosition({ x: rx, y: ry });
-  // console.log(x, y);
 
   let message = new PIXI.Text(String.fromCharCode(char), style);
   message.interactive = true;
@@ -86,6 +85,7 @@ const addIcon = (char, fill, rx, ry, cb) => {
 
 class Game {
   constructor(pixi, io) {
+    console.log('Game started!')
     if (!this.id) {
       this.id = Math.trunc(Math.random() * 1000000);
     }
@@ -102,8 +102,6 @@ class Game {
 
     this.init(io, "http://192.168.1.3:3000");
     this.refresh();
-    
-    // app.stage.addChild(message);
   }
 
   init(io, url) {
@@ -118,15 +116,17 @@ class Game {
       window.location.pathname = `/${message}`;
     });
 
+    socket.on("leaderboard", message => {
+      this.leaderboard = message;
+      console.log(message);
+    });
+
     socket.on("ok", roomId => {
       socket.emit("start", { roomId: roomId || window.location.pathname, playerId: localStorage.getItem("id") });
     });
 
-    // setInterval(() => {
-    //   socket.emit("state", localStorage.getItem("id"));
-    // }, 1000);
-
     socket.on("table", message => {
+      console.log('table', {message});
       for (let i = this.app.stage.children.length - 1; i >= 0; i--) {
         this.app.stage.removeChild(this.app.stage.children[i]);
       }
@@ -135,7 +135,7 @@ class Game {
         this.app.stage.addChild(
           addIcon(
             shapes[Math.trunc(i / 6)],
-            colors[i % 5],
+            colors[i % 6],
             10 + Math.random() * 80,
             10 + Math.random() * 50,
             () => {}
@@ -147,11 +147,12 @@ class Game {
     });
 
     socket.on("hand", message => {
+      console.log('hand', {message});
       Object.values(message).forEach((i, n, a) => {
         this.app.stage.addChild(
           addIcon(
             shapes[Math.trunc(i / 6)],
-            colors[i % 5],
+            colors[i % 6],
             10 + n * 100/a.length,
             90,
             () => socket.emit('guess', i)
@@ -166,21 +167,6 @@ class Game {
 
     socket.on("fail", _ => alert('Błąd!'));
 
-    socket.on("event", data => {
-      const iconBar = getMixedIcons(5, 5, 6).map((icon, i) => {
-        return addIcon(icon.shape, icon.color, 10 + i * 20, 95);
-      });
-
-      const iconTable = getMixedIcons(10, 5, 6).map((icon, i) => {
-        return addIcon(
-          icon.shape,
-          icon.color,
-          10 + Math.random() * 80,
-          10 + Math.random() * 50
-        );
-      });
-    });
-
     socket.on("disconnect", function() {});
   }
 
@@ -194,10 +180,21 @@ class Game {
 
   refresh() {
     this.addText(
-      `Wynik: ${this.score}`,
+      `Gracz ${this.id} | Wynik: ${this.score}`,
       5,
       5
     );
+
+    if(this.leaderboard){
+      const leaderboard = this.leaderboard.reduce((a,c,i)=>{ return a + `${c.id}: ${c.score}\n` },"");
+      console.log(leaderboard);
+      this.addText(
+        `Tablica wyników:\n${leaderboard}` ,
+        80,
+        5
+      );
+    }
+    
 
     this.addText(
       "Kliknij w symbol o tym samym kształcie i kolorze co któryś powyzej:",
