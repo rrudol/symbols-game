@@ -7,25 +7,12 @@ function shuffle(a) {
 }
 
 const colors = shuffle([
-  // '#001f3f', // Navy
-  // '#0074D9', // BLUE
   "#7FDBFF", // AQUA
-  // '#39CCCC', // TEAL
-
-  // "#3D9970", // OLIVE
   '#2ECC40', // GREEN
-  // '#01FF70', // LIME
-
   "#FFDC00", // YELLOW
-
   "#FF851B", // ORANGE
   "#FF4136", // RED
-  // '#85144b', // MAROON
-  // '#F012BE' // FUCHSIA
   '#B10DC9', // PURPLE
-  // '#111111', // BLACK
-  // '#AAAAAA', // GRAY
-  // '#DDDDDD', // SILVER
 ]);
 
 const shapes = shuffle([
