@@ -3,13 +3,8 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const Game = require('./classes/Game');
-const Board = require('./classes/Board');
 
 app.use(express.static('public'));
-
-const games = [];
-
-const board = new Board(8);
 
 app.get('/*', (req, res) => res.sendFile("index.html", {"root": __dirname+'/../public'}));
 
@@ -30,6 +25,6 @@ io.on('connection', (socket) => {
   console.log('a user connected', socket.id);
 });
 
-http.listen(3000, () => {
-  console.log('listening on *:3000');
+http.listen(3187, () => {
+  console.log('listening on *:3187');
 });
