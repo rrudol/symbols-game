@@ -87,7 +87,8 @@ class Game {
 
     this.score = 0;
 
-    this.init(io, "http://192.168.1.3:3000");
+    // this.init(io, "http://192.168.1.3:3000"); - for local development
+    this.init(io, "http://symbols.rudol.pl:3000");
     this.refresh();
   }
 
