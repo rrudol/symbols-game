@@ -1,18 +1,19 @@
+import io from "socket.io-client";
+import * as PIXI from "pixi.js";
+import { fromEvent } from "rxjs";
+import { map, throttleTime, skipWhile, filter } from "rxjs/operators";
+
 function shuffle(a) {
-  // for (let i = a.length - 1; i > 0; i--) {
-  //   const j = Math.floor(Math.random() * (i + 1));
-  //   [a[i], a[j]] = [a[j], a[i]];
-  // }
   return a;
 }
 
 const colors = shuffle([
   "#7FDBFF", // AQUA
-  '#2ECC40', // GREEN
+  "#2ECC40", // GREEN
   "#FFDC00", // YELLOW
   "#FF851B", // ORANGE
   "#FF4136", // RED
-  '#B10DC9', // PURPLE
+  "#B10DC9" // PURPLE
 ]);
 
 const shapes = shuffle([
@@ -23,19 +24,6 @@ const shapes = shuffle([
   0xf02d, // book
   0xf0f3 // bell
 ]);
-
-const getMixedIcons = (count, colorCount, shapeCount) => {
-  const colorArray = colors;
-  const shapeArray = shapes;
-  console.log(colors, colorArray, shapeArray);
-  return Array(count)
-    .fill()
-    .map(icon => {
-      const colorNo = Math.floor(Math.random() * colorCount);
-      const shapeNo = Math.floor(Math.random() * shapeCount);
-      return { color: colorArray[colorNo], shape: shapeArray[shapeNo] };
-    });
-};
 
 const normalizePosition = ({ x, y }) => {
   return {
@@ -65,14 +53,14 @@ const addIcon = (char, fill, rx, ry, cb) => {
   message.x = x;
   message.y = y;
 
-  message.on('pointerup', cb);
+  message.on("pointerup", cb);
 
   return message;
 };
 
 class Game {
-  constructor(pixi, io) {
-    console.log('Game started!')
+  constructor() {
+    console.log("Game started!");
     if (!this.id) {
       this.id = Math.trunc(Math.random() * 1000000);
     }
@@ -82,18 +70,19 @@ class Game {
       height: window.innerHeight
     });
 
-    this.app.renderer.backgroundColor = 0xf2e5bd;
+    this.defaultBackgroundColor = 0xf2e5bd;
+    this.app.renderer.backgroundColor = this.defaultBackgroundColor;
     document.body.appendChild(this.app.view);
 
     this.score = 0;
 
     // this.init(io, "http://192.168.1.3:3000"); - for local development
-    this.init(io, "http://symbols.rudol.pl:3187");
+    this.init(io, `${location.origin}`);
     this.refresh();
   }
 
   init(io, url) {
-    const socket = io(url);
+    const socket = io();
     socket.on("connect", () => {
       console.log("connected");
       socket.emit("join", window.location.pathname);
@@ -110,11 +99,14 @@ class Game {
     });
 
     socket.on("ok", roomId => {
-      socket.emit("start", { roomId: roomId || window.location.pathname, playerId: localStorage.getItem("id") });
+      socket.emit("start", {
+        roomId: roomId || window.location.pathname,
+        playerId: localStorage.getItem("id")
+      });
     });
 
     socket.on("table", message => {
-      console.log('table', {message});
+      console.log("table", { message });
       for (let i = this.app.stage.children.length - 1; i >= 0; i--) {
         this.app.stage.removeChild(this.app.stage.children[i]);
       }
@@ -135,15 +127,19 @@ class Game {
     });
 
     socket.on("hand", message => {
-      console.log('hand', {message});
+      console.log("hand", { message });
       Object.values(message).forEach((i, n, a) => {
         this.app.stage.addChild(
           addIcon(
             shapes[Math.trunc(i / 6)],
             colors[i % 6],
-            10 + n * 100/a.length,
+            10 + (n * 100) / a.length,
             90,
-            () => socket.emit('guess', i)
+            () => {
+              const event = new Event("guess");
+              event.data = i;
+              document.dispatchEvent(event);
+            }
           )
         );
       });
@@ -151,9 +147,22 @@ class Game {
       this.refresh();
     });
 
-    socket.on("score", message => this.score = message[0]);
+    // Guess symbol
+    fromEvent(document, "guess")
+      .pipe(filter(() => !this.failedCountdown))
+      .pipe(map(event => event.data))
+      .subscribe(val => socket.emit("guess", val));
 
-    socket.on("fail", _ => alert('Błąd!'));
+    socket.on("score", message => (this.score = message[0]));
+
+    socket.on("fail", _ => {
+      this.app.renderer.backgroundColor = 0xff3366;
+      this.failedCountdown = true;
+      setTimeout(() => {
+        this.failedCountdown = false;
+        this.app.renderer.backgroundColor = this.defaultBackgroundColor;
+      }, 1000);
+    });
 
     socket.on("disconnect", function() {});
   }
@@ -167,22 +176,15 @@ class Game {
   }
 
   refresh() {
-    this.addText(
-      `Gracz ${this.id} | Wynik: ${this.score}`,
-      5,
-      5
-    );
+    this.addText(`Gracz ${this.id} | Wynik: ${this.score}`, 5, 5);
 
-    if(this.leaderboard){
-      const leaderboard = this.leaderboard.reduce((a,c,i)=>{ return a + `${c.id}: ${c.score}\n` },"");
+    if (this.leaderboard) {
+      const leaderboard = this.leaderboard.reduce((a, c, i) => {
+        return a + `${c.id}: ${c.score}\n`;
+      }, "");
       console.log(leaderboard);
-      this.addText(
-        `Tablica wyników:\n${leaderboard}` ,
-        80,
-        5
-      );
+      this.addText(`Tablica wyników:\n${leaderboard}`, 80, 5);
     }
-    
 
     this.addText(
       "Kliknij w symbol o tym samym kształcie i kolorze co któryś powyzej:",
@@ -204,4 +206,4 @@ class Game {
   }
 }
 
-define(() => Game);
+export default Game;
