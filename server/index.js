@@ -13,7 +13,7 @@ app.use(bundler.middleware());
 io.on("connection", socket => {
   socket.on("join", message => {
     if (message === "/") {
-      socket.emit("redirect", 1);
+      socket.emit("redirect", Math.round((Math.random() * 1000000) % 1000000));
     } else {
       socket.emit("ok");
     }

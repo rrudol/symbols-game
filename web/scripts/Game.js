@@ -1,7 +1,7 @@
 import io from "socket.io-client";
 import * as PIXI from "pixi.js";
 import { fromEvent } from "rxjs";
-import { map, throttleTime, skipWhile, filter } from "rxjs/operators";
+import { map, filter } from "rxjs/operators";
 
 function shuffle(a) {
   return a;
@@ -76,7 +76,7 @@ class Game {
 
     this.score = 0;
 
-    // this.init(io, "http://192.168.1.3:3000"); - for local development
+    // this.init(io, "http://192.168.1.3:3000");// - for local development
     this.init(io, `${location.origin}`);
     this.refresh();
   }
@@ -176,25 +176,25 @@ class Game {
   }
 
   refresh() {
-    this.addText(`Gracz ${this.id} | Wynik: ${this.score}`, 5, 5);
+    this.addText(`Player ${this.id} | Score: ${this.score}`, 5, 5);
 
     if (this.leaderboard) {
       const leaderboard = this.leaderboard.reduce((a, c, i) => {
         return a + `${c.id}: ${c.score}\n`;
       }, "");
       console.log(leaderboard);
-      this.addText(`Tablica wyników:\n${leaderboard}`, 80, 5);
+      this.addText(`Leaderboard:\n${leaderboard}`, 80, 5);
     }
 
     this.addText(
-      "Kliknij w symbol o tym samym kształcie i kolorze co któryś powyzej:",
+      "Click symbol with the same color and shape as one of the symbols above",
       5,
       85
     );
   }
 
   addText(text, x, y) {
-    let message = new PIXI.Text(text, {
+    const message = new PIXI.Text(text, {
       fontFamily: "Arial",
       fontSize: 16,
       fill: 0xff1010
