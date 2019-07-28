@@ -1,5 +1,6 @@
 {
   "name": "symbols",
+  "version": 1,
   "alias": "symbols.rudol.pl",
   "env": {
     "NODE_ENV": "production"
